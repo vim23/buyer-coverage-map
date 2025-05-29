@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Buyer & Leads Coverage</title>
+
+  <!-- Leaflet core CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <!-- Geocoder CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
+  />
+
+  <style>
+    html, body, #map { margin:0; padding:0; height:100%; }
+
+    /* Legend / layers control styling */
+    .leaflet-control-layers {
+      width: 120px;
+      height: 200px;
+      background-color: rgba(255,255,255,0.8) !important;
+      border: 1px solid #007bff;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .leaflet-control-layers-list,
+    .leaflet-control-layers-expanded .leaflet-control-layers-list {
+      display: block !important;
+    }
+    .leaflet-control-layers-list input[type="checkbox"] {
+      transform: scale(1.3);
+      margin-right: 6px;
+    }
+    .leaflet-control-layers-list label {
+      padding-top: 10px;
+      padding-left: 10px;
+      font-size: 0.90rem;
+      color: #333;
+      line-height:1.6;
+    }
+
+    /* Popup styling */
+    .custom-popup {
+      max-width: 260px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: sans-serif;
+      font-size: 0.9rem;
+      line-height: 1.3;
+      padding: 6px;
+    }
+
+    /* Geocoder position override */
+    .leaflet-control-geocoder {
+      position: absolute !important;
+      top: 10px !important;
+      left: 10px !important;
+      /*z-index: 1001;*/
+    }
+    /* Geocoder icon styling */
+    .leaflet-control-geocoder-icon {
+      width: 42px !important;
+      height: 42px !important;
+      background-size: 42px 42px !important;
+      background-color: rgba(255,255,255,0.8) !important;
+    }
+
+    /* Push the geocoder down below the zoom controls */
+    .leaflet-control-geocoder {
+      margin-top: 15px !important;
+    }
+
+    /* Push the legend further down */
+    .leaflet-control-layers {
+      margin-top: 110px !important;
+    }
+
+    /* push the zoom down below the legend */
+    .leaflet-control-zoom {
+      margin-top: 130px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet core JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- Geocoder plugin + JS -->
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<script>
+  // 1. Initialize map (no default zoom control)
+  const map = L.map('map', { zoomControl: false }).setView([54, -2], 6);
+
+  // Canvas renderer for faster polygon drawing
+  const canvasRenderer = L.canvas({ padding: 0.5 });
+
+  // 2. Base layer (CartoDB Positron)
+  const osm = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {
+      attribution:
+        '&copy; <a href="https://carto.com/attributions">CARTO</a> ' +
+        '— &copy; OpenStreetMap contributors',
+      subdomains: 'abcd'
+    }
+  ).addTo(map);
+
+  // 3–6. Load Wards, Buyers & Leads together, then add legend once they’re all ready
+  let wardsLayer, wardsNoBL, leadsLayer, buyersLayer;
+
+  Promise.all([
+    fetch('data/wards.geojson').then(r => { if (!r.ok) throw new Error(`Wards HTTP ${r.status}`); return r.json(); }),
+    fetch('data/wards_nobuyers_noleads.geojson').then(r => { if (!r.ok) throw new Error(`WardsNoBL HTTP ${r.status}`); return r.json(); }),
+    fetch('data/pc_buyers_group.geojson').then(r => { if (!r.ok) throw new Error(`Buyers HTTP ${r.status}`); return r.json(); }),
+    fetch('data/pc_leads_group.geojson').then(r => { if (!r.ok) throw new Error(`Leads HTTP ${r.status}`); return r.json(); })
+  ])
+    .then(([wardsData, wardsNoBLData, leadsData, buyersData]) => {
+      // --- Wards ---
+      wardsLayer = L.geoJSON(wardsData, {
+        renderer: canvasRenderer,
+        style: { color: 'rgba(108, 3, 159, 0.6)', weight: 1, fill: false}
+      }).addTo(map);
+
+      // --- Wards No Buyers No Leads ---
+wardsNoBLLayer = L.geoJSON(wardsNoBLData, {
+  renderer: canvasRenderer,
+  style: {
+    color:      'rgba(108, 3, 159, 0.6)',       // stroke (outline) colour
+    weight:     1,                              // outline width
+    fillColor:  'rgba(232, 115, 232, 0.6)',       // lavender fill
+    fillOpacity: 0.6                            // semi-transparent
+  }
+}).addTo(map);
+
+
+
+      
+      // --- Leads ---
+      leadsLayer = L.geoJSON(leadsData, {
+        pointToLayer: (f, ll) => L.circleMarker(ll, {
+          radius: 7, fillColor: '#067cfacc', color: '#000', weight: 1, fillOpacity: 1
+        }),
+        onEachFeature: (f, layer) => {
+          const p = f.properties;
+          layer.bindPopup(
+            `<div class="custom-popup">
+               <b>Postcode:</b> ${p.postcode}<br/>
+               <b>Ward:</b> ${p.ward_name}<br/>
+               <b>Leads in postcode:</b> ${p.group_in_pc}<br/>
+               <b>Leads in ward:</b> ${p.group_in_ward}
+             </div>`
+          );
+        }
+      }).addTo(map);
+
+      // --- Buyers ---
+      buyersLayer = L.geoJSON(buyersData, {
+        pointToLayer: (f, ll) => L.circleMarker(ll, {
+          radius: 6, fillColor: '#fa8d06cc', color: '#000', weight: 1, fillOpacity: 1
+        }),
+        onEachFeature: (f, layer) => {
+          const p = f.properties;
+          layer.bindPopup(
+            `<div class="custom-popup">
+               <b>Postcode:</b> ${p.postcode}<br/>
+               <b>Ward:</b> ${p.ward_name}<br/>
+               <b>Buyers in postcode:</b> ${p.group_in_pc}<br/>
+               <b>Buyers in ward:</b> ${p.group_in_ward}
+             </div>`
+          );
+        }
+      }).addTo(map);
+
+      // --- Legend (only now that all three exist) ---
+      L.control.layers(
+        { 'OSM': osm },
+        { 'Buyers': buyersLayer,'Leads': leadsLayer, 'No Activity': wardsNoBLLayer, 'Wards': wardsLayer},
+        { position: 'topleft', collapsed: false }
+      ).addTo(map);
+    })
+    .catch(err => {
+      console.error('GeoJSON load error:', err);
+      alert('Error loading map data – see console for details.');
+    });
+
+  // 7. Geocoder (topleft)
+  L.Control.geocoder({
+    position: 'topleft',
+    defaultMarkGeocode: false,
+    placeholder: 'Search address…',
+    geocoder: L.Control.Geocoder.nominatim({ geocodingQueryParams: { countrycodes: 'gb', limit: 1 } })
+  })
+  .on('markgeocode', e => {
+    map.setView(e.geocode.center, 14);
+    L.marker(e.geocode.center)
+     .addTo(map)
+     .bindPopup(e.geocode.name)
+     .openPopup();
+  })
+  .addTo(map);
+
+  // 8. Zoom control (bottomleft, below legend)
+  L.control.zoom({ position: 'bottomleft' }).addTo(map);
+</script>
+</body>
+</html>
