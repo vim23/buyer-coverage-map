@@ -111,101 +111,100 @@
     }
   ).addTo(map);
 
-  // 3–6. Load Wards, Buyers & Leads together, then add legend once they’re all ready
-  let wardsLayer, wardsNoBL, leadsLayer, buyersLayer;
+  // 3–6. Load Wards, Buyers & Leads and Wards No Activity together, then add legend
+  let wardsLayer, wardsNoActivityLayer, buyersLayer, leadsLayer;
 
   Promise.all([
-    fetch('data/wards.geojson').then(r => { if (!r.ok) throw new Error(`Wards HTTP ${r.status}`); return r.json(); }),
-    fetch('data/wards_nobuyers_noleads.geojson').then(r => { if (!r.ok) throw new Error(`WardsNoBL HTTP ${r.status}`); return r.json(); }),
-    fetch('data/pc_buyers_group.geojson').then(r => { if (!r.ok) throw new Error(`Buyers HTTP ${r.status}`); return r.json(); }),
-    fetch('data/pc_leads_group.geojson').then(r => { if (!r.ok) throw new Error(`Leads HTTP ${r.status}`); return r.json(); })
+    fetch('data/wards.geojson')
+      .then(r => { if (!r.ok) throw new Error(`Wards HTTP ${r.status}`); return r.json(); }),
+    fetch('data/wards_nobuyers_noleads.geojson')
+      .then(r => { if (!r.ok) throw new Error(`WardsNoActivity HTTP ${r.status}`); return r.json(); }),
+    fetch('data/pc_buyers_group.geojson')
+      .then(r => { if (!r.ok) throw new Error(`Buyers HTTP ${r.status}`); return r.json(); }),
+    fetch('data/pc_leads_group.geojson')
+      .then(r => { if (!r.ok) throw new Error(`Leads HTTP ${r.status}`); return r.json(); })
   ])
-    .then(([wardsData, wardsNoBLData, leadsData, buyersData]) => {
-      // --- Wards ---
+    .then(([wardsData, noActData, buyersData, leadsData]) => {
+      // --- Wards outline only ---
       wardsLayer = L.geoJSON(wardsData, {
         renderer: canvasRenderer,
-        style: { color: 'rgba(108, 3, 159, 0.6)', weight: 1, fill: false}
+        style: { color: 'rgba(82, 2, 83, 0.7)', weight: 1, fill: false }
       }).addTo(map);
 
-      // --- Wards No Buyers No Leads ---
-wardsNoBLLayer = L.geoJSON(wardsNoBLData, {
-  renderer: canvasRenderer,
-  style: {
-    color:      'rgba(108, 3, 159, 0.6)',       // stroke (outline) colour
-    weight:     1,                              // outline width
-    fillColor:  'rgba(232, 115, 232, 0.6)',       // lavender fill
-    fillOpacity: 0.6                            // semi-transparent
-  }
-}).addTo(map);
-
-
-
-      
-      // --- Leads ---
-      leadsLayer = L.geoJSON(leadsData, {
-        pointToLayer: (f, ll) => L.circleMarker(ll, {
-          radius: 7, fillColor: '#067cfacc', color: '#000', weight: 1, fillOpacity: 1
-        }),
-        onEachFeature: (f, layer) => {
-          const p = f.properties;
-          layer.bindPopup(
-            `<div class="custom-popup">
-               <b>Postcode:</b> ${p.postcode}<br/>
-               <b>Ward:</b> ${p.ward_name}<br/>
-               <b>Leads in postcode:</b> ${p.group_in_pc}<br/>
-               <b>Leads in ward:</b> ${p.group_in_ward}
-             </div>`
-          );
-        }
+      // --- Wards No Activity ---
+      wardsNoActivityLayer = L.geoJSON(noActData, {
+        renderer: canvasRenderer,
+        style: { color: 'rgba(82, 2, 83, 0.7)', weight: 1, fillColor: 'rgba(222, 2, 225, 0.7)'}
       }).addTo(map);
 
       // --- Buyers ---
       buyersLayer = L.geoJSON(buyersData, {
         pointToLayer: (f, ll) => L.circleMarker(ll, {
-          radius: 6, fillColor: '#fa8d06cc', color: '#000', weight: 1, fillOpacity: 1
+          radius: 5, fillColor: '#192ff9', color: '#f9f60c', weight: 1.5, fillOpacity: 1
         }),
         onEachFeature: (f, layer) => {
           const p = f.properties;
           layer.bindPopup(
-            `<div class="custom-popup">
-               <b>Postcode:</b> ${p.postcode}<br/>
-               <b>Ward:</b> ${p.ward_name}<br/>
-               <b>Buyers in postcode:</b> ${p.group_in_pc}<br/>
-               <b>Buyers in ward:</b> ${p.group_in_ward}
-             </div>`
+            `<div class="custom-popup">` +
+               `<b>Postcode:</b> ${p.postcode}<br/>` +
+               `<b>Ward:</b> ${p.ward_name}<br/>` +
+               `<b>Buyers in postcode:</b> ${p.group_in_pc}<br/>` +
+               `<b>Buyers in ward:</b> ${p.group_in_ward}` +
+            `</div>`
           );
         }
       }).addTo(map);
 
-      // --- Legend (only now that all three exist) ---
+      // --- Leads ---
+      leadsLayer = L.geoJSON(leadsData, {
+        pointToLayer: (f, ll) => L.circleMarker(ll, {
+          radius: 5, fillColor: '#f9f60c', color: '#192ff9', weight: 1.5, fillOpacity: 1
+        }),
+        onEachFeature: (f, layer) => {
+          const p = f.properties;
+          layer.bindPopup(
+            `<div class="custom-popup">` +
+               `<b>Postcode:</b> ${p.postcode}<br/>` +
+               `<b>Ward:</b> ${p.ward_name}<br/>` +
+               `<b>Leads in postcode:</b> ${p.group_in_pc}<br/>` +
+               `<b>Leads in ward:</b> ${p.group_in_ward}` +
+            `</div>`
+          );
+        }
+      }).addTo(map);
+
+      // **Bring Buyers to the front so they draw above Leads**
+      buyersLayer.bringToFront();
+
+      // --- Legend ---
       L.control.layers(
         { 'OSM': osm },
-        { 'Buyers': buyersLayer,'Leads': leadsLayer, 'No Activity': wardsNoBLLayer, 'Wards': wardsLayer},
+        {
+          'Buyers': buyersLayer,
+          'Leads': leadsLayer,
+          'No Activity': wardsNoActivityLayer,
+          'Wards': wardsLayer,
+        },
         { position: 'topleft', collapsed: false }
       ).addTo(map);
     })
     .catch(err => {
       console.error('GeoJSON load error:', err);
-      alert('Error loading map data – see console for details.');
+      alert('Error loading map data – see console');
     });
 
   // 7. Geocoder (topleft)
   L.Control.geocoder({
-    position: 'topleft',
-    defaultMarkGeocode: false,
-    placeholder: 'Search address…',
+    position: 'topleft', defaultMarkGeocode: false, placeholder: 'Search address…',
     geocoder: L.Control.Geocoder.nominatim({ geocodingQueryParams: { countrycodes: 'gb', limit: 1 } })
   })
   .on('markgeocode', e => {
     map.setView(e.geocode.center, 14);
-    L.marker(e.geocode.center)
-     .addTo(map)
-     .bindPopup(e.geocode.name)
-     .openPopup();
-  })
-  .addTo(map);
+    L.marker(e.geocode.center).addTo(map)
+      .bindPopup(e.geocode.name).openPopup();
+  }).addTo(map);
 
-  // 8. Zoom control (bottomleft, below legend)
+  // 8. Zoom control (bottomleft)
   L.control.zoom({ position: 'bottomleft' }).addTo(map);
 </script>
 </body>
