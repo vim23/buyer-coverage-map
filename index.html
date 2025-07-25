@@ -131,9 +131,10 @@
         style: { color: 'rgba(82, 2, 83, 0.7)', weight: 1, fill: false },
         onEachFeature: (f, layer) => {
           const p = f.properties;
+          // wd24nm = ward name
           layer.bindPopup(
             `<div class="custom-popup">
-              <b>Ward:</b> ${p.ward_name}<br/>
+              <b>Ward:</b> ${p.wd24nm}<br/>
             </div>`
           );
         }
