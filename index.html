@@ -18,8 +18,8 @@
 
     /* Legend / layers control styling */
     .leaflet-control-layers {
-      width: 120px;
-      height: 200px;
+      width: 110px;
+      height: 190px;
       background-color: rgba(255,255,255,0.8) !important;
       border: 1px solid #007bff;
       border-radius: 6px;
@@ -61,9 +61,9 @@
     }
     /* Geocoder icon styling */
     .leaflet-control-geocoder-icon {
-      width: 42px !important;
-      height: 42px !important;
-      background-size: 42px 42px !important;
+      width: 36px !important;
+      height: 36px !important;
+      background-size: 36px 36px !important;
       background-color: rgba(255,255,255,0.8) !important;
     }
 
@@ -128,13 +128,33 @@
       // --- Wards outline only ---
       wardsLayer = L.geoJSON(wardsData, {
         renderer: canvasRenderer,
-        style: { color: 'rgba(82, 2, 83, 0.7)', weight: 1, fill: false }
+        style: { color: 'rgba(82, 2, 83, 0.7)', weight: 1, fill: false },
+        onEachFeature: (f, layer) => {
+          const p = f.properties;
+          layer.bindPopup(
+            `<div class="custom-popup">
+              <b>Ward:</b> ${p.ward_name}<br/>
+            </div>`
+          );
+        }
       }).addTo(map);
 
       // --- Wards No Activity ---
       wardsNoActivityLayer = L.geoJSON(noActData, {
         renderer: canvasRenderer,
-        style: { color: 'rgba(82, 2, 83, 0.7)', weight: 1, fillColor: 'rgba(222, 2, 225, 0.7)'}
+        style: { 
+          color: 'rgba(82, 2, 83, 0.7)', 
+          weight: 1, 
+          fillColor: 'rgba(222, 2, 225, 0.7)' 
+        },
+        onEachFeature: (f, layer) => {
+          const p = f.properties;
+          layer.bindPopup(
+            `<div class="custom-popup">
+              <b>Ward:</b> ${p.ward_name}<br/>
+            </div>`
+          );
+        }
       }).addTo(map);
 
       // --- Buyers ---
