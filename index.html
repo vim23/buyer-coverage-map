@@ -13,75 +13,134 @@
     href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
   />
 
-  <style>
-    html, body, #map { margin:0; padding:0; height:100%; }
+<style>
+  html, body, #map { margin:0; padding:0; height:100%; }
 
-    /* Legend / layers control styling */
-    .leaflet-control-layers {
-      width: 110px;
-      height: 190px;
-      background-color: rgba(255,255,255,0.8) !important;
-      border: 1px solid #007bff;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .leaflet-control-layers-list,
-    .leaflet-control-layers-expanded .leaflet-control-layers-list {
-      display: block !important;
-    }
-    .leaflet-control-layers-list input[type="checkbox"] {
-      transform: scale(1.3);
-      margin-right: 6px;
-    }
-    .leaflet-control-layers-list label {
-      padding-top: 10px;
-      padding-left: 10px;
-      font-size: 0.90rem;
-      color: #333;
-      line-height:1.6;
-    }
+  /* ===== Unified control theming ===== */
+  :root{
+    --control-bg: rgba(107,154,173,0.18);  /* light #6b9aad */
+    --control-border: #34495e;
+    --control-text: #333;
+    --control-radius: 6px;
+    --control-shadow: 0 2px 6px rgba(0,0,0,0.30);
+    --left-offset: 80px;                  /* single knob for left spacing */
+  }
 
-    /* Popup styling */
-    .custom-popup {
-      max-width: 260px;
-      max-height: 300px;
-      overflow-y: auto;
-      font-family: sans-serif;
-      font-size: 0.9rem;
-      line-height: 1.3;
-      padding: 6px;
-    }
+  /* Containers (legend, zoom, scale, geocoder, attribution) */
+  .leaflet-control,
+  .leaflet-control-layers,
+  .leaflet-control-zoom,
+  .leaflet-control-scale,
+  .leaflet-control-geocoder,
+  .leaflet-control-attribution {
+    background: var(--control-bg) !important;
+    border: 1px solid var(--control-border);
+    border-radius: var(--control-radius);
+    box-shadow: var(--control-shadow);
+    color: var(--control-text);
+    backdrop-filter: saturate(120%) blur(0.5px); /* subtle polish */
+  }
 
-    /* Geocoder position override */
-    .leaflet-control-geocoder {
-      position: absolute !important;
-      top: 10px !important;
-      left: 10px !important;
-      /*z-index: 1001;*/
-    }
-    /* Geocoder icon styling */
-    .leaflet-control-geocoder-icon {
-      width: 36px !important;
-      height: 36px !important;
-      background-size: 36px 36px !important;
-      background-color: rgba(255,255,255,0.8) !important;
-    }
+  /* ---------- Legend / layers control container ---------- */
+  .leaflet-control-layers {
+    position: relative;            /* above neighbors if overlapping */
+    z-index: 1002;
+    width: 110px;
+    height: 190px;
+    margin-top: 110px !important;  /* push legend down */
+    margin-left: var(--left-offset) !important;
+    overflow: hidden;              /* keep rounded corners tidy */
+    background-clip: padding-box;
+  }
+  .leaflet-control-layers-list,
+  .leaflet-control-layers-expanded .leaflet-control-layers-list {
+    display: block !important;
+  }
+  .leaflet-control-layers-list input[type="checkbox"] {
+    transform: scale(1.3);
+    margin-right: 6px;
+  }
+  .leaflet-control-layers-list label {
+    padding-top: 10px;
+    padding-left: 10px;
+    font-size: 0.90rem;
+    color: var(--control-text);
+    line-height: 1.6;
+  }
 
-    /* Push the geocoder down below the zoom controls */
-    .leaflet-control-geocoder {
-      margin-top: 15px !important;
-    }
+  /* ---------- Popup styling ---------- */
+  .custom-popup {
+    max-width: 260px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    padding: 6px;
+  }
 
-    /* Push the legend further down */
-    .leaflet-control-layers {
-      margin-top: 110px !important;
-    }
+  /* ---------- Geocoder ---------- */
+  .leaflet-control-geocoder {
+    position: absolute !important;   /* keep your absolute placement */
+    top: 10px !important;
+    left: var(--left-offset) !important;
+    margin-top: 15px !important;     /* spacing below zoom if needed */
+    z-index: 1001;                    /* sits just under legend */
+  }
+  .leaflet-control-geocoder-icon {
+    width: 36px !important;
+    height: 36px !important;
+    background-size: 36px 36px !important;
+    background-color: var(--control-bg) !important;
+    border-radius: var(--control-radius);
+    border: 1px solid var(--control-border);
+  }
+  .leaflet-control-geocoder input {
+    background: rgba(255,255,255,0.92);
+    color: var(--control-text);
+    border: 1px solid var(--control-border);
+    border-radius: 4px;
+  }
 
-    /* push the zoom down below the legend */
-    .leaflet-control-zoom {
-      margin-top: 130px;
-    }
-  </style>
+  /* ---------- Scale bar ---------- */
+  .leaflet-control-scale {
+    padding: 8px 12px;                           /* inner padding around lines */
+    margin-left: var(--left-offset) !important; /* push right from edge */
+    margin-top: 90px;
+  }
+  .leaflet-control-scale-line {
+    background: transparent;
+    color: var(--control-text);
+    border: none;
+    border-top: 2px solid var(--control-text);
+    border-bottom: 2px solid var(--control-text);
+  }
+
+  /* ---------- Zoom control ---------- */
+  .leaflet-control-zoom {
+    margin-left: var(--left-offset) !important; /* push right from edge */
+    margin-top: 40px;                          /* push the zoom down below legend */
+  }
+  .leaflet-control-zoom a {
+    background: transparent !important; /* use container bg */
+    color: var(--control-text) !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .leaflet-control-zoom a:hover {
+    filter: brightness(0.95);
+  }
+
+  /* ---------- Attribution ---------- */
+  .leaflet-control-attribution {
+    color: var(--control-text);
+  }
+  .leaflet-control-attribution a {
+    color: var(--control-text);
+    text-decoration: underline;
+  }
+</style>
+
 </head>
 <body>
 
@@ -95,7 +154,16 @@
 
 <script>
   // 1. Initialize map (no default zoom control)
-  const map = L.map('map', { zoomControl: false }).setView([54, -2], 6);
+  const map = L.map('map', { zoomControl: false }).setView([54, -2], 5);
+
+  // Dedicated SVG renderer in the standard interactive pane
+  const pointsRenderer = L.svg({ pane: 'markerPane' });
+
+  // Always-on-top pane for point layers so popups are clickable
+  // Pane + SVG renderer dedicated to points (fast, precise hit-tests)
+  //map.createPane('pointsPane');
+  //map.getPane('pointsPane').style.zIndex = 650;           // above polygons
+  //const pointsRenderer = L.svg({ pane: 'pointsPane' });
 
   // Canvas renderer for faster polygon drawing
   const canvasRenderer = L.canvas({ padding: 0.5 });
@@ -111,6 +179,21 @@
     }
   ).addTo(map);
 
+// --- Zoom-based marker radius ---
+function getRadius(z){
+  // tweak thresholds if you like
+  if (z <= 5) return 2;      // UK & isles
+  if (z <= 7) return 3;      // regional
+  if (z <= 10) return 4;     // town/city
+  return 5;                  // local / street
+}
+
+// Update all circle marker sizes after zooms
+function updatePointSizes(){
+  const r = getRadius(map.getZoom());
+  if (buyersLayer) buyersLayer.eachLayer(l => l.setStyle({ radius: r }));
+  if (leadsLayer)  leadsLayer.eachLayer(l => l.setStyle({ radius: r }));
+}
   // 3–6. Load Wards, Buyers & Leads and Wards No Activity together, then add legend
   let wardsLayer, wardsNoActivityLayer, buyersLayer, leadsLayer;
 
@@ -128,7 +211,7 @@
       // --- Wards outline only ---
       wardsLayer = L.geoJSON(wardsData, {
         renderer: canvasRenderer,
-        style: { color: 'rgba(99, 99, 99, 0.7)', weight: 1, fill: false },
+        style: { color: 'rgba(99, 99, 99, 0.7)', weight: 0.5, fill: false },
         onEachFeature: (f, layer) => {
           const p = f.properties;
           // wd24nm = ward name
@@ -145,7 +228,7 @@
         renderer: canvasRenderer,
         style: { 
           color: 'rgba(99, 99, 99, 0.7)', 
-          weight: 1, 
+          weight: 0.5, 
           fillColor: 'rgba(222, 2, 225, 0.7)' 
         },
         onEachFeature: (f, layer) => {
@@ -160,8 +243,16 @@
 
       // --- Buyers ---
       buyersLayer = L.geoJSON(buyersData, {
+        pane: 'markerPane',
+        renderer: pointsRenderer,             // improve performance
+        interactive: true,
         pointToLayer: (f, ll) => L.circleMarker(ll, {
-          radius: 5, fillColor: '#0a00fc', color: '#0a00fc', weight: 1.5, fillOpacity: 0.9
+          className: 'hit-stroke',              // ← adds the CSS class
+          radius: getRadius(map.getZoom()), 
+          fillColor: '#0a00fc', color: '#0a00fc', 
+          weight: 12,       // ← big click target
+          opacity: 0.001,   // ← effectively invisible, still “painted”
+          fillOpacity: 0.9
         }),
         onEachFeature: (f, layer) => {
           const p = f.properties;
@@ -178,8 +269,16 @@
 
       // --- Leads ---
       leadsLayer = L.geoJSON(leadsData, {
+        pane: 'markerPane',
+        renderer: pointsRenderer,             // improve performance
+        interactive: true,
         pointToLayer: (f, ll) => L.circleMarker(ll, {
-          radius: 5, fillColor: '#009dff', color: '#0a00fc', weight: 1.5, fillOpacity: 1
+          className: 'hit-stroke',              // ← adds the CSS class
+          radius: getRadius(map.getZoom()), 
+          fillColor: '#009dff', color: '#0a00fc', 
+          weight: 12,       // ← big click target
+          opacity: 0.001,   // ← effectively invisible, still “painted”
+          fillOpacity: 1
         }),
         onEachFeature: (f, layer) => {
           const p = f.properties;
@@ -196,6 +295,23 @@
 
       // **Bring Buyers to the front so they draw above Leads**
       buyersLayer.bringToFront();
+
+      // Make sure sizes track zoom level
+      map.on('zoomend', updatePointSizes);
+
+      // Set correct sizes immediately after layers are created
+      updatePointSizes();
+
+// after wardsLayer / buyersLayer / leadsLayer are added:
+//const bounds = L.latLngBounds([]);
+//if (wardsLayer)  bounds.extend(wardsLayer.getBounds());
+//if (buyersLayer) bounds.extend(buyersLayer.getBounds());
+//if (leadsLayer)  bounds.extend(leadsLayer.getBounds());
+
+//map.fitBounds(bounds, { padding: [30, 30] });   // adds a little breathing room
+
+// Metric scale bar (bottomleft)
+L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
 
       // --- Legend ---
       L.control.layers(
